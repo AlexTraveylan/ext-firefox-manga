@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Sushiscan Manga Tracker",
+  "short_name": "MangaTracker",
+  "version": "0.1.0",
+  "description": "Suit ta progression de lecture sur sushiscan.net : historique par série, dernière position, reprise en un clic.",
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "manga-tracker@local",
+      "strict_min_version": "115.0"
+    }
+  },
+
+  "permissions": ["storage"],
+  "host_permissions": ["https://sushiscan.net/*"],
+
+  "background": {
+    "scripts": ["lib/db.js", "background.js"]
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["https://sushiscan.net/*"],
+      "js": ["lib/url-parser.js", "content/content.js"],
+      "css": ["content/content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "icons": {
+    "48": "icons/icon.svg",
+    "128": "icons/icon.svg"
+  }
+}
