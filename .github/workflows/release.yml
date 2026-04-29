@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Patch manifest version
+        run: |
+          jq --arg v "${{ steps.version.outputs.VERSION }}" '.version = $v' manifest.json > manifest.tmp
+          mv manifest.tmp manifest.json
+
+      - name: Build .xpi
+        run: |
+          zip -r "manga-tracker-${{ steps.version.outputs.VERSION }}.xpi" \
+            manifest.json \
+            background.js \
+            lib/ \
+            content/ \
+            icons/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "v${{ steps.version.outputs.VERSION }}"
+          generate_release_notes: true
+          files: "manga-tracker-${{ steps.version.outputs.VERSION }}.xpi"

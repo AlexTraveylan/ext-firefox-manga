@@ -1,0 +1,11 @@
+# Build outputs
+*.xpi
+manifest.tmp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/

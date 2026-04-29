@@ -4,7 +4,7 @@
   const parsed = self.parseSushiUrl(location.href);
   if (!parsed) return;
 
-  const { series, seriesTitle, volume, canonicalUrl } = parsed;
+  const { series, seriesTitle, type, number, canonicalUrl } = parsed;
 
   const PANEL_ID = "manga-tracker-panel";
   const STATE_KEY = "panel.collapsed";
@@ -112,7 +112,8 @@
       url: canonicalUrl,
       series,
       seriesTitle,
-      volume,
+      type,
+      volume: number,
       page: state.currentPage || 1,
       totalPages: state.totalPages,
       scrollY: window.scrollY,
@@ -161,7 +162,7 @@
   function buildCollapsed() {
     const btn = document.createElement("button");
     btn.className = "mt-fab";
-    btn.title = `${seriesTitle} — Volume ${volume}`;
+    btn.title = `${seriesTitle} — ${entryTypeLabel(type, number)}`;
     btn.textContent = "📖";
     // Inline fallback so button is always clickable even without CSS
     btn.style.cssText =
@@ -241,7 +242,7 @@
     const label = document.createElement("a");
     label.className = "mt-row-label";
     label.href = rec.url;
-    label.textContent = `${status} Volume ${rec.volume}`;
+    label.textContent = `${status} ${entryTypeLabel(rec.type, rec.volume)}`;
     head.appendChild(label);
     const meta = document.createElement("span");
     meta.className = "mt-row-meta";
@@ -278,6 +279,11 @@
   }
 
   // ----- helpers -----
+
+  function entryTypeLabel(t, n) {
+    if (t === "chapitre" || t === "chapter") return `Chapitre ${n}`;
+    return `Volume ${n}`;
+  }
 
   function sendMessage(msg) {
     return browser.runtime.sendMessage(msg);
