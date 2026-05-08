@@ -2,9 +2,11 @@
 
 Extension Firefox qui mémorise ta progression de lecture sur `sushiscan.net`.
 
-Quand tu arrives sur une page de volume (ex: `https://sushiscan.net/fairy-tail-volume-12/`), un panneau repliable apparaît en bas à droite. Il liste les volumes déjà lus de **cette série**, indique la dernière page atteinte, et propose un bouton **« ↻ Reprendre »** qui te scroll automatiquement à l'endroit où tu t'étais arrêté.
+Quand tu arrives sur une page de volume ou de chapitre (ex: `https://sushiscan.net/jujutsu-kaisen-chapitre-166/`), un panneau repliable apparaît en bas à droite. Il liste l'historique de lecture de **cette série**, indique la dernière page atteinte, et propose un bouton **« ↻ Reprendre »** qui te scroll automatiquement à l'endroit où tu t'étais arrêté.
 
 Les données sont stockées **localement dans IndexedDB** (privées à ton profil Firefox). Aucune connexion réseau, rien n'est envoyé nulle part.
+
+![Aperçu de l'extension sur Jujutsu Kaisen chapitre 166](assets/example.png)
 
 ---
 
@@ -45,7 +47,7 @@ Ces variantes de Firefox permettent de désactiver la signature obligatoire des 
 4. Empaquette l'extension en `.xpi` :
    ```bash
    cd /chemin/vers/ext_manga
-   zip -r -FS manga-tracker.xpi * -x "*.git*" "*.md"
+   zip -r -FS manga-tracker.xpi * -x "*.git*" "*.md" "assets/*"
    ```
 5. Dans Firefox, va sur `about:addons`, clique sur l'engrenage ⚙️ → **« Installer un module depuis un fichier »**, choisis le `.xpi`.
 
@@ -73,18 +75,19 @@ C'est la procédure officielle, mais elle prend du temps (review automatique che
 
 ## 🚀 Utilisation
 
-1. Ouvre n'importe quelle page de volume sushiscan, ex :
+1. Ouvre n'importe quelle page de volume ou de chapitre sushiscan, ex :
+   - `https://sushiscan.net/jujutsu-kaisen-chapitre-166/`
    - `https://sushiscan.net/fairy-tail-volume-12/`
-   - `https://sushiscan.net/one-piece-volume-3/`
+   - `https://sushiscan.net/one-piece-chapter-1100/`
 
 2. Un petit bouton **📖** apparaît en bas à droite de la page. Clique dessus pour déplier le panneau.
 
 3. **Lis normalement.** L'extension détecte automatiquement la page-image actuellement à l'écran, et sauvegarde ta position toutes les ~1,5 s pendant le scroll. Une sauvegarde finale est faite quand tu fermes l'onglet.
 
-4. **Quand tu reviens sur le même volume plus tard**, le panneau affiche :
-   - La page où tu en étais (ex : `87/200`)
+4. **Quand tu reviens sur le même volume/chapitre plus tard**, le panneau affiche :
+   - La page où tu en étais (ex : `9/19`)
    - Un bouton **↻ Reprendre** qui scroll automatiquement à ta dernière position
-   - Un historique des autres volumes lus de la même série
+   - Un historique des autres entrées lues de la même série
 
 5. Le panneau ne montre **que la série de la page courante**. Si tu passes de Fairy Tail à One Piece, c'est un autre contexte, isolé.
 
@@ -129,10 +132,12 @@ content/
   content.js           — Injecté sur sushiscan.net : panneau + tracking scroll
   content.css          — Styles isolés du panneau
 lib/
-  url-parser.js        — parseSushiUrl() : extrait {series, volume} d'une URL
+  url-parser.js        — parseSushiUrl() : extrait {series, type, number} d'une URL
   db.js                — Wrapper IndexedDB (open, get, put, queryBySeries)
 icons/
   icon.svg             — Icône de l'extension
+assets/
+  example.png          — Capture d'écran pour le README (non chargée par l'extension)
 ```
 
 ---
@@ -140,7 +145,7 @@ icons/
 ## ❓ Problèmes fréquents
 
 **Le panneau ne s'affiche pas sur une page sushiscan.**
-- Vérifie que l'URL matche bien `/{série}-volume-{N}/`. Les chapitres et autres formats ne sont pas trackés.
+- Vérifie que l'URL matche bien `/{série}-(volume|chapitre|chapter)-{N}/`. Les autres formats (fiches série, one-shots sans numéro…) ne sont pas trackés.
 - Recharge la page (`F5`) — l'extension n'agit qu'au chargement.
 - Ouvre la console de l'extension via `about:debugging` → Inspecter, et regarde si une erreur apparaît.
 
@@ -157,7 +162,7 @@ icons/
 
 ## 🚫 Hors-scope
 
-- Pas de tracking pour les chapitres, one-shots ou autres patterns que `/{série}-volume-{N}/`.
+- Pas de tracking pour les one-shots ou autres patterns sans numéro (seuls `volume`, `chapitre`, `chapter` sont reconnus).
 - Pas de vue cross-manga : le panneau ne montre que la série de la page courante.
 - Pas de synchronisation cloud / multi-device.
 - Pas d'export/import des données (à ajouter plus tard si besoin).

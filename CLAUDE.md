@@ -13,7 +13,7 @@ This is a plain Manifest V3 Firefox extension. There is no bundler, no transpila
 # In Firefox: about:debugging#/runtime/this-firefox → "Charger un module complémentaire temporaire…" → select manifest.json
 
 # Package a .xpi manually
-zip -r -FS manga-tracker.xpi * -x "*.git*" "*.md" ".github/*"
+zip -r -FS manga-tracker.xpi * -x "*.git*" "*.md" ".github/*" "assets/*"
 ```
 
 The CI workflow (`.github/workflows/release.yml`) builds and publishes the `.xpi` automatically on any `vX.Y.Z` tag push. It patches `manifest.json` with the tag version before zipping.
