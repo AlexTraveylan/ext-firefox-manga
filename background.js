@@ -1,5 +1,7 @@
 "use strict";
 
+const MAX_ENTRIES_PER_SERIES = 10;
+
 browser.runtime.onMessage.addListener((msg, _sender) => {
   if (!msg || typeof msg !== "object") return;
 
@@ -34,5 +36,6 @@ async function handleSave(p) {
     lastVisitedAt: now,
   };
   await Db.putVolume(record);
+  await Db.trimSeries(p.series, MAX_ENTRIES_PER_SERIES);
   return { ok: true };
 }

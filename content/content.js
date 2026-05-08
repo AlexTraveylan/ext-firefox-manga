@@ -9,6 +9,7 @@
   const PANEL_ID = "manga-tracker-panel";
   const STATE_KEY = "panel.collapsed";
   const DEBOUNCE_MS = 1500;
+  const MIN_TIME_ON_PAGE_MS = 30_000;
 
   const state = {
     currentPage: 0,
@@ -22,9 +23,12 @@
     savePending: false,
   };
 
+  let pageEntryTime = 0;
+
   init().catch((err) => console.error("[manga-tracker] init failed", err));
 
   async function init() {
+    pageEntryTime = Date.now();
     state.collapsed = await readCollapsed();
     detectImages();
     state.seriesRecords = await sendMessage({ type: "QUERY_SERIES", series });
@@ -106,6 +110,7 @@
 
   function flushSave() {
     if (!state.savePending) return;
+    if (Date.now() - pageEntryTime < MIN_TIME_ON_PAGE_MS) return;
     state.savePending = false;
     clearTimeout(state.saveTimer);
     const payload = {
