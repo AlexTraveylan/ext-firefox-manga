@@ -31,7 +31,10 @@
     pageEntryTime = Date.now();
     state.collapsed = await readCollapsed();
     detectImages();
-    state.seriesRecords = await sendMessage({ type: "QUERY_SERIES", series });
+    state.seriesRecords = await sendMessage({
+      type: "QUERY_SERIES",
+      series,
+    });
     state.currentRecord =
       state.seriesRecords.find((r) => r.url === canonicalUrl) || null;
 
@@ -42,7 +45,7 @@
       attachUnloadListener();
     } else {
       console.warn(
-        "[manga-tracker] no manga images detected on this page — tracking disabled"
+        "[manga-tracker] no manga images detected on this page — tracking disabled",
       );
     }
   }
@@ -62,7 +65,7 @@
       }
     }
     const big = Array.from(document.querySelectorAll("img")).filter(
-      (img) => (img.naturalHeight || img.height || 0) >= 500
+      (img) => (img.naturalHeight || img.height || 0) >= 500,
     );
     if (big.length >= 3) {
       state.images = big;
@@ -84,7 +87,7 @@
         }
         scheduleSave();
       },
-      { threshold: [0.5] }
+      { threshold: [0.5] },
     );
     state.images.forEach((img) => io.observe(img));
   }
@@ -100,6 +103,56 @@
     window.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "hidden") flushSave();
     });
+  }
+
+  function resumeToPage(rec, btn) {
+    const targetImg = state.images[rec.page - 1];
+    if (!targetImg) {
+      window.scrollTo({ top: rec.scrollY, behavior: "smooth" });
+      return;
+    }
+
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Chargement…";
+    }
+
+    state.images.slice(0, rec.page).forEach((img) => {
+      if (img.loading === "lazy") img.loading = "eager";
+    });
+
+    const finish = () => {
+      targetImg.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "↻ Reprendre";
+      }
+    };
+
+    if (targetImg.complete && targetImg.naturalHeight > 0) {
+      finish();
+      return;
+    }
+
+    const timeoutId = setTimeout(finish, 10_000);
+    const cleanup = () => clearTimeout(timeoutId);
+
+    targetImg.addEventListener(
+      "load",
+      () => {
+        cleanup();
+        finish();
+      },
+      { once: true },
+    );
+    targetImg.addEventListener(
+      "error",
+      () => {
+        cleanup();
+        finish();
+      },
+      { once: true },
+    );
   }
 
   function scheduleSave() {
@@ -125,7 +178,7 @@
       timestamp: Date.now(),
     };
     sendMessage({ type: "SAVE_POSITION", payload }).catch((err) =>
-      console.error("[manga-tracker] save failed", err)
+      console.error("[manga-tracker] save failed", err),
     );
     state.currentRecord = {
       ...(state.currentRecord || {}),
@@ -252,7 +305,9 @@
     const meta = document.createElement("span");
     meta.className = "mt-row-meta";
     const pageInfo =
-      rec.totalPages > 0 ? `${rec.page || 1}/${rec.totalPages}` : `p.${rec.page || 1}`;
+      rec.totalPages > 0
+        ? `${rec.page || 1}/${rec.totalPages}`
+        : `p.${rec.page || 1}`;
     meta.textContent = `${pageInfo} · ${formatRelative(rec.lastVisitedAt)}`;
     head.appendChild(meta);
     li.appendChild(head);
@@ -262,7 +317,7 @@
       resumeBtn.className = "mt-resume";
       resumeBtn.textContent = "↻ Reprendre";
       resumeBtn.addEventListener("click", () => {
-        window.scrollTo({ top: rec.scrollY, behavior: "smooth" });
+        resumeToPage(rec, resumeBtn);
       });
       li.appendChild(resumeBtn);
     }

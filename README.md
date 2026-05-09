@@ -21,9 +21,10 @@ L'extension reste chargée jusqu'à ce que tu fermes Firefox. À chaque redémar
 1. **Récupère le code** quelque part sur ton disque. Si tu lis ce README, c'est déjà fait — repère bien le chemin du dossier (ex : `/home/tdemares/dev_folder/ext_manga/`).
 
 2. **Ouvre Firefox**, puis dans la barre d'adresse tape :
-   ```
-   about:debugging#/runtime/this-firefox
-   ```
+
+    ```
+    about:debugging#/runtime/this-firefox
+    ```
 
 3. Clique sur le bouton **« Charger un module complémentaire temporaire… »** (en haut à droite de la liste des extensions).
 
@@ -45,10 +46,10 @@ Ces variantes de Firefox permettent de désactiver la signature obligatoire des 
 2. Lance-le, va sur `about:config` et accepte le warning.
 3. Cherche `xpinstall.signatures.required` et passe-le à `false`.
 4. Empaquette l'extension en `.xpi` :
-   ```bash
-   cd /chemin/vers/ext_manga
-   zip -r -FS manga-tracker.xpi * -x "*.git*" "*.md" "assets/*"
-   ```
+    ```bash
+    cd /chemin/vers/ext_manga
+    zip -r -FS manga-tracker.xpi * -x "*.git*" "*.md" "assets/*"
+    ```
 5. Dans Firefox, va sur `about:addons`, clique sur l'engrenage ⚙️ → **« Installer un module depuis un fichier »**, choisis le `.xpi`.
 
 #### B.2 — Signature via Mozilla (Firefox standard)
@@ -57,15 +58,17 @@ Pour utiliser l'extension sur le Firefox stable sans bidouille, il faut la faire
 
 1. Crée un compte sur [addons.mozilla.org](https://addons.mozilla.org/developers/).
 2. Installe l'outil `web-ext` :
-   ```bash
-   npm install --global web-ext
-   ```
+    ```bash
+    npm install --global web-ext
+    ```
 3. Soumets l'extension pour signature en mode "self-distribution" (signature uniquement, pas de listing public) :
-   ```bash
-   cd /chemin/vers/ext_manga
-   web-ext sign --api-key=<JWT_ISSUER> --api-secret=<JWT_SECRET> --channel=unlisted
-   ```
-   Les clés API se génèrent depuis [le panneau développeur AMO](https://addons.mozilla.org/developers/addon/api/key/).
+
+    ```bash
+    cd /chemin/vers/ext_manga
+    web-ext sign --api-key=<JWT_ISSUER> --api-secret=<JWT_SECRET> --channel=unlisted
+    ```
+
+    Les clés API se génèrent depuis [le panneau développeur AMO](https://addons.mozilla.org/developers/addon/api/key/).
 
 4. La commande produit un fichier `.xpi` signé. Tu l'installes via `about:addons` → ⚙️ → **« Installer un module depuis un fichier »**.
 
@@ -76,18 +79,18 @@ C'est la procédure officielle, mais elle prend du temps (review automatique che
 ## 🚀 Utilisation
 
 1. Ouvre n'importe quelle page de volume ou de chapitre sushiscan, ex :
-   - `https://sushiscan.net/jujutsu-kaisen-chapitre-166/`
-   - `https://sushiscan.net/fairy-tail-volume-12/`
-   - `https://sushiscan.net/one-piece-chapter-1100/`
+    - `https://sushiscan.net/jujutsu-kaisen-chapitre-166/`
+    - `https://sushiscan.net/fairy-tail-volume-12/`
+    - `https://sushiscan.net/one-piece-chapter-1100/`
 
 2. Un petit bouton **📖** apparaît en bas à droite de la page. Clique dessus pour déplier le panneau.
 
 3. **Lis normalement.** L'extension détecte automatiquement la page-image actuellement à l'écran, et sauvegarde ta position toutes les ~1,5 s pendant le scroll. Une sauvegarde finale est faite quand tu fermes l'onglet.
 
 4. **Quand tu reviens sur le même volume/chapitre plus tard**, le panneau affiche :
-   - La page où tu en étais (ex : `9/19`)
-   - Un bouton **↻ Reprendre** qui scroll automatiquement à ta dernière position
-   - Un historique des autres entrées lues de la même série
+    - La page où tu en étais (ex : `9/19`)
+    - Un bouton **↻ Reprendre** qui scroll automatiquement à ta dernière position
+    - Un historique des autres entrées lues de la même série
 
 5. Le panneau ne montre **que la série de la page courante**. Si tu passes de Fairy Tail à One Piece, c'est un autre contexte, isolé.
 
@@ -145,17 +148,21 @@ assets/
 ## ❓ Problèmes fréquents
 
 **Le panneau ne s'affiche pas sur une page sushiscan.**
+
 - Vérifie que l'URL matche bien `/{série}-(volume|chapitre|chapter)-{N}/`. Les autres formats (fiches série, one-shots sans numéro…) ne sont pas trackés.
 - Recharge la page (`F5`) — l'extension n'agit qu'au chargement.
 - Ouvre la console de l'extension via `about:debugging` → Inspecter, et regarde si une erreur apparaît.
 
 **Le bouton « Reprendre » n'apparaît pas.**
+
 - Il n'apparaît que si une position est déjà sauvegardée (`scrollY > 0`). Première visite = pas de bouton.
 
 **Le tracking ne suit pas la page courante.**
+
 - Les sélecteurs d'images sont des heuristiques (`#readerarea img`, `.ts-main-image`...). Si sushiscan change son DOM, vérifie la console : un warning `no manga images detected` apparaît. Il suffit d'ajouter le bon sélecteur dans `content/content.js` → `detectImages()`.
 
 **J'ai perdu mes données après avoir réinstallé Firefox.**
+
 - IndexedDB est attaché au profil Firefox. Si tu réinstalles ou changes de profil, les données restent dans l'ancien profil. Pas de sync cloud.
 
 ---
