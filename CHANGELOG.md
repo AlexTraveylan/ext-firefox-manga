@@ -7,7 +7,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ### Corrigé
 
-- La reprise (« ↻ Reprendre ») arrivait à une position trop haute sur les volumes lazy-loadés et exigeait plusieurs clics : on attend désormais que **toutes** les images précédant la cible soient chargées avant de scroller, avec un indicateur de progression (`Chargement N/M…`) et un filet de sécurité de 20 s
+- La reprise (« ↻ Reprendre ») arrivait à une position trop haute sur les volumes lazy-loadés et exigeait plusieurs clics : on attend désormais que **toutes** les images précédant la cible soient réellement chargées avant de scroller (détection via `src !== data-src` pour ignorer les placeholders qui passaient à tort pour « complete »), avec un indicateur de progression (`Chargement N/M…`) et un filet de sécurité de 60 s
 - La sauvegarde manuelle (« 💾 Sauvegarder ») n'enregistrait pas la position courante du viewport mais la page la plus haute jamais atteinte : elle calcule maintenant la page réellement visible avant d'écraser, ce qui permet de fixer une position plus haute volontairement (la règle anti-recul ne s'applique qu'aux sauvegardes automatiques)
 - L'horodatage de la ligne courante (« il y a N min ») ne se mettait pas à jour après une sauvegarde manuelle : il reflète maintenant le `lastVisitedAt` réel et passe à « à l'instant » après chaque save
 - `state.seriesRecords` n'était pas synchronisé avec `state.currentRecord` après save, ce qui pouvait faire afficher des informations périmées sur certaines lignes

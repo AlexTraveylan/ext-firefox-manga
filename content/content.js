@@ -116,9 +116,23 @@
     }
 
     const preceding = state.images.slice(0, rec.page);
+    const isReallyLoaded = (img) => {
+      if (!img.complete || img.naturalHeight === 0) return false;
+      if (img.dataset.src && img.src !== img.dataset.src) return false;
+      return true;
+    };
+
+    const pending = new Set();
     preceding.forEach((img) => {
+      if (isReallyLoaded(img)) return;
+      pending.add(img);
       if (img.loading === "lazy") img.loading = "eager";
-      if (!img.src && img.dataset.src) img.src = img.dataset.src;
+      if (img.dataset.src && img.src !== img.dataset.src) {
+        img.src = img.dataset.src;
+      }
+      if (img.dataset.srcset && img.srcset !== img.dataset.srcset) {
+        img.srcset = img.dataset.srcset;
+      }
     });
 
     let resolved = false;
@@ -130,7 +144,7 @@
     };
     const updateProgress = () => {
       if (!btn || resolved) return;
-      const loaded = preceding.reduce((n, img) => n + (img.complete ? 1 : 0), 0);
+      const loaded = preceding.length - pending.size;
       btn.textContent = `Chargement ${loaded}/${preceding.length}…`;
     };
     const finish = () => {
@@ -144,32 +158,31 @@
         });
       });
     };
-    const tryFinish = () => {
-      if (resolved) return;
-      if (preceding.every((img) => img.complete)) finish();
-      else updateProgress();
-    };
 
     if (btn) {
       btn.disabled = true;
       updateProgress();
     }
 
-    if (preceding.every((img) => img.complete)) {
+    if (pending.size === 0) {
       finish();
       return;
     }
 
-    preceding.forEach((img) => {
-      if (img.complete) return;
-      const onSettle = () => tryFinish();
+    pending.forEach((img) => {
+      const onSettle = () => {
+        if (resolved) return;
+        pending.delete(img);
+        if (pending.size === 0) finish();
+        else updateProgress();
+      };
       img.addEventListener("load", onSettle, { once: true });
       img.addEventListener("error", onSettle, { once: true });
     });
 
     setTimeout(() => {
       if (!resolved) finish();
-    }, 20_000);
+    }, 60_000);
   }
 
   function scheduleSave() {
