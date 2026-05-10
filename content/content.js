@@ -37,6 +37,9 @@
     });
     state.currentRecord =
       state.seriesRecords.find((r) => r.url === canonicalUrl) || null;
+    if (state.currentRecord && state.currentRecord.page) {
+      state.currentPage = state.currentRecord.page;
+    }
 
     mountPanel();
     if (state.images.length > 0) {
@@ -79,7 +82,7 @@
         for (const e of entries) {
           if (e.isIntersecting && e.intersectionRatio >= 0.5) {
             const idx = state.images.indexOf(e.target);
-            if (idx >= 0) {
+            if (idx >= 0 && idx + 1 > state.currentPage) {
               state.currentPage = idx + 1;
               updateCurrentLine();
             }
@@ -141,7 +144,7 @@
       "load",
       () => {
         cleanup();
-        finish();
+        requestAnimationFrame(() => requestAnimationFrame(finish));
       },
       { once: true },
     );
@@ -161,9 +164,11 @@
     state.saveTimer = setTimeout(flushSave, DEBOUNCE_MS);
   }
 
-  function flushSave() {
+  function flushSave(force = false) {
     if (!state.savePending) return;
-    if (Date.now() - pageEntryTime < MIN_TIME_ON_PAGE_MS) return;
+    if (!force && Date.now() - pageEntryTime < MIN_TIME_ON_PAGE_MS) return;
+    const savedPage = state.currentRecord && state.currentRecord.page || 0;
+    if (!force && state.currentPage <= savedPage && window.scrollY < (state.currentRecord && state.currentRecord.scrollY || 0)) return;
     state.savePending = false;
     clearTimeout(state.saveTimer);
     const payload = {
@@ -269,6 +274,25 @@
     }
 
     wrap.appendChild(list);
+
+    const footer = document.createElement("div");
+    footer.className = "mt-footer";
+    const saveBtn = document.createElement("button");
+    saveBtn.className = "mt-save";
+    saveBtn.textContent = "💾 Sauvegarder";
+    saveBtn.addEventListener("click", () => {
+      state.savePending = true;
+      flushSave(true);
+      saveBtn.textContent = "✓ Sauvegardé";
+      saveBtn.disabled = true;
+      setTimeout(() => {
+        saveBtn.textContent = "💾 Sauvegarder";
+        saveBtn.disabled = false;
+      }, 2000);
+    });
+    footer.appendChild(saveBtn);
+    wrap.appendChild(footer);
+
     return wrap;
   }
 

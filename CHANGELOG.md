@@ -3,6 +3,19 @@
 Toutes les modifications notables de ce projet sont documentées ici.
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## [0.3.0] - 2026-05-10
+
+### Ajouté
+
+- Bouton "💾 Sauvegarder" dans le panel pour forcer une sauvegarde manuelle de la position courante
+
+### Corrigé
+
+- La reprise de position (bouton "↻ Reprendre") fonctionnait en deux clics sur les volumes avec lazy loading (lazysizes) — corrigé en copiant `data-src` vers `src` et en attendant un double `requestAnimationFrame` après le chargement
+- L'UI affichait `1/N` au lieu de la position sauvegardée lors d'une navigation vers un volume déjà en cours — la position de départ est maintenant initialisée depuis la sauvegarde
+- La position ne peut plus reculer : l'IntersectionObserver n'écrase la page courante que si on avance au-delà de la position sauvegardée
+- La sauvegarde automatique ne remplace plus une position avancée par une position inférieure lors d'une arrivée en haut de page
+
 ## [0.2.0] - 2026-05-08
 
 ### Ajouté

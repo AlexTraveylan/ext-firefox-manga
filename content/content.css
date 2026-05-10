@@ -166,3 +166,30 @@
   font-style: italic;
   padding: 8px 4px;
 }
+
+#manga-tracker-panel .mt-footer {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #374151;
+}
+
+#manga-tracker-panel .mt-save {
+  width: 100%;
+  padding: 6px 10px;
+  background: #374151;
+  color: #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: background 0.15s ease;
+}
+
+#manga-tracker-panel .mt-save:hover:not(:disabled) {
+  background: #4b5563;
+  color: #fff;
+}
+
+#manga-tracker-panel .mt-save:disabled {
+  color: #6ee7b7;
+  cursor: default;
+}
