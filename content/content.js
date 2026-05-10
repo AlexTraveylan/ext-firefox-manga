@@ -115,47 +115,61 @@
       return;
     }
 
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = "Chargement…";
-    }
-
-    state.images.slice(0, rec.page).forEach((img) => {
+    const preceding = state.images.slice(0, rec.page);
+    preceding.forEach((img) => {
+      if (img.loading === "lazy") img.loading = "eager";
       if (!img.src && img.dataset.src) img.src = img.dataset.src;
     });
 
-    const finish = () => {
-      targetImg.scrollIntoView({ behavior: "smooth", block: "start" });
+    let resolved = false;
+    const restoreBtn = () => {
       if (btn) {
         btn.disabled = false;
         btn.textContent = "↻ Reprendre";
       }
     };
+    const updateProgress = () => {
+      if (!btn || resolved) return;
+      const loaded = preceding.reduce((n, img) => n + (img.complete ? 1 : 0), 0);
+      btn.textContent = `Chargement ${loaded}/${preceding.length}…`;
+    };
+    const finish = () => {
+      if (resolved) return;
+      resolved = true;
+      targetImg.scrollIntoView({ block: "start" });
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          targetImg.scrollIntoView({ block: "start" });
+          restoreBtn();
+        });
+      });
+    };
+    const tryFinish = () => {
+      if (resolved) return;
+      if (preceding.every((img) => img.complete)) finish();
+      else updateProgress();
+    };
 
-    if (targetImg.complete && targetImg.naturalHeight > 0) {
+    if (btn) {
+      btn.disabled = true;
+      updateProgress();
+    }
+
+    if (preceding.every((img) => img.complete)) {
       finish();
       return;
     }
 
-    const timeoutId = setTimeout(finish, 10_000);
-    const cleanup = () => clearTimeout(timeoutId);
+    preceding.forEach((img) => {
+      if (img.complete) return;
+      const onSettle = () => tryFinish();
+      img.addEventListener("load", onSettle, { once: true });
+      img.addEventListener("error", onSettle, { once: true });
+    });
 
-    targetImg.addEventListener(
-      "load",
-      () => {
-        cleanup();
-        requestAnimationFrame(() => requestAnimationFrame(finish));
-      },
-      { once: true },
-    );
-    targetImg.addEventListener(
-      "error",
-      () => {
-        cleanup();
-        finish();
-      },
-      { once: true },
-    );
+    setTimeout(() => {
+      if (!resolved) finish();
+    }, 20_000);
   }
 
   function scheduleSave() {
@@ -167,8 +181,14 @@
   function flushSave(force = false) {
     if (!state.savePending) return;
     if (!force && Date.now() - pageEntryTime < MIN_TIME_ON_PAGE_MS) return;
-    const savedPage = state.currentRecord && state.currentRecord.page || 0;
-    if (!force && state.currentPage <= savedPage && window.scrollY < (state.currentRecord && state.currentRecord.scrollY || 0)) return;
+    const savedPage = (state.currentRecord && state.currentRecord.page) || 0;
+    if (
+      !force &&
+      state.currentPage <= savedPage &&
+      window.scrollY <
+        ((state.currentRecord && state.currentRecord.scrollY) || 0)
+    )
+      return;
     state.savePending = false;
     clearTimeout(state.saveTimer);
     const payload = {
@@ -185,7 +205,7 @@
     sendMessage({ type: "SAVE_POSITION", payload }).catch((err) =>
       console.error("[manga-tracker] save failed", err),
     );
-    state.currentRecord = {
+    const updated = {
       ...(state.currentRecord || {}),
       ...payload,
       firstVisitedAt:
@@ -193,6 +213,24 @@
         payload.timestamp,
       lastVisitedAt: payload.timestamp,
     };
+    state.currentRecord = updated;
+    const idx = state.seriesRecords.findIndex((r) => r.url === canonicalUrl);
+    if (idx >= 0) state.seriesRecords[idx] = updated;
+    else state.seriesRecords.push(updated);
+    updateCurrentLine();
+  }
+
+  function computeViewportPage() {
+    if (state.images.length === 0) return 0;
+    const ref = window.scrollY + window.innerHeight * 0.4;
+    let page = 1;
+    for (let i = 0; i < state.images.length; i++) {
+      const rect = state.images[i].getBoundingClientRect();
+      const top = rect.top + window.scrollY;
+      if (top <= ref) page = i + 1;
+      else break;
+    }
+    return page;
   }
 
   // ----- UI -----
@@ -281,13 +319,23 @@
     saveBtn.className = "mt-save";
     saveBtn.textContent = "💾 Sauvegarder";
     saveBtn.addEventListener("click", () => {
+      const viewportPage = computeViewportPage();
+      if (viewportPage > 0) state.currentPage = viewportPage;
       state.savePending = true;
       flushSave(true);
-      saveBtn.textContent = "✓ Sauvegardé";
-      saveBtn.disabled = true;
+      if (state.panelEl && !state.panelEl.querySelector(".mt-row-current")) {
+        renderPanel();
+      }
+      const btn = state.panelEl && state.panelEl.querySelector(".mt-save");
+      if (!btn) return;
+      btn.textContent = "✓ Sauvegardé";
+      btn.disabled = true;
       setTimeout(() => {
-        saveBtn.textContent = "💾 Sauvegarder";
-        saveBtn.disabled = false;
+        const b = state.panelEl && state.panelEl.querySelector(".mt-save");
+        if (b) {
+          b.textContent = "💾 Sauvegarder";
+          b.disabled = false;
+        }
       }, 2000);
     });
     footer.appendChild(saveBtn);
@@ -351,9 +399,18 @@
   function updateCurrentLine() {
     if (!state.panelEl || state.collapsed) return;
     const row = state.panelEl.querySelector(".mt-row-current .mt-row-meta");
-    if (row && state.totalPages > 0) {
-      row.textContent = `${state.currentPage}/${state.totalPages} · maintenant`;
-    }
+    if (!row) return;
+    const page =
+      state.currentPage ||
+      (state.currentRecord && state.currentRecord.page) ||
+      1;
+    const total =
+      state.totalPages ||
+      (state.currentRecord && state.currentRecord.totalPages) ||
+      0;
+    const pageInfo = total > 0 ? `${page}/${total}` : `p.${page}`;
+    const ts = state.currentRecord && state.currentRecord.lastVisitedAt;
+    row.textContent = `${pageInfo} · ${ts ? formatRelative(ts) : "non sauvegardé"}`;
   }
 
   async function toggleCollapsed() {

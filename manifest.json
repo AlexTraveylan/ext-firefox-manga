@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Sushiscan Manga Tracker",
   "short_name": "MangaTracker",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Suit ta progression de lecture sur sushiscan.net : historique par série, dernière position, reprise en un clic.",
 
   "browser_specific_settings": {
