@@ -118,7 +118,7 @@
     }
 
     state.images.slice(0, rec.page).forEach((img) => {
-      if (img.loading === "lazy") img.loading = "eager";
+      if (!img.src && img.dataset.src) img.src = img.dataset.src;
     });
 
     const finish = () => {
