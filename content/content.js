@@ -80,12 +80,16 @@
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
-          if (e.isIntersecting && e.intersectionRatio >= 0.5) {
-            const idx = state.images.indexOf(e.target);
-            if (idx >= 0 && idx + 1 > state.currentPage) {
-              state.currentPage = idx + 1;
-              updateCurrentLine();
-            }
+          if (!e.isIntersecting || e.intersectionRatio < 0.5) continue;
+          // Skip images that aren't actually rendered yet (lazy-load collapse):
+          // unloaded images report 0 naturalHeight, and a small bounding rect
+          // means the layout hasn't reserved real space for them.
+          if (e.target.naturalHeight === 0) continue;
+          if (e.boundingClientRect.height < 100) continue;
+          const idx = state.images.indexOf(e.target);
+          if (idx >= 0 && idx + 1 > state.currentPage) {
+            state.currentPage = idx + 1;
+            updateCurrentLine();
           }
         }
         scheduleSave();
